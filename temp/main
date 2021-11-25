@@ -19,16 +19,13 @@ if not game:IsLoaded() then
 	game.Loaded:Wait()
 	notLoaded:Destroy()
 end
-
-ver = '5.3.3'
-if UserSettings().GameSettings:InFullScreen()==true then
-	ToggleFullscreen()
+for i,v in pairs(workspace:GetDescendants()) do
+	if v:IsA("ClickDetector") then
+		v.MaxActivationDistance = math.huge
+	end
 end
-game:GetService("GuiService"):ToggleFullscreen()
-wait()
-game:GetService("CoreGui"):TakeScreenshot()
-wait()
-game:GetService("GuiService"):ToggleFullscreen()
+ver = '5.3.3'
+local whitelisted={}
 Players = game:GetService("Players")
 
 Holder = Instance.new("Frame")
@@ -4312,6 +4309,14 @@ CMDs[#CMDs + 1] = {NAME = 'unkillpunch / softpunch', DESC = 'Disable Killpunch'}
 CMDs[#CMDs + 1] = {NAME = 'kill / fekill [TARGET]', DESC = 'Quickly kill the target'}
 CMDs[#CMDs + 1] = {NAME = 'silentaim / softaim', DESC = 'Redirect Bullet'}
 CMDs[#CMDs + 1] = {NAME = 'unsilentaim / unsoftaim', DESC = 'Stop Soft Aim'}
+CMDs[#CMDs + 1] = {NAME = 'nocooldown / nocd', DESC = 'No Cooldowns'}
+CMDs[#CMDs + 1] = {NAME = 'cooldown / cd', DESC = 'Give Cooldowns'}
+CMDs[#CMDs + 1] = {NAME = 'nodoors / nd', DESC = 'Remove Doors'}
+CMDs[#CMDs + 1] = {NAME = 'doors', DESC = 'Bring pack doors'}
+CMDs[#CMDs + 1] = {NAME = 'killaura', DESC = 'Kill everyone around you'}
+CMDs[#CMDs + 1] = {NAME = 'unkillaura', DESC = 'Stop Killaura'}
+CMDs[#CMDs + 1] = {NAME = 'whitelist / wl', DESC = 'Wont do anything bad to them'}
+CMDs[#CMDs + 1] = {NAME = 'blacklist / unwl / unwhitelist', DESC = 'Remove player from whitelist'}
 
 CMDs[#CMDs + 1] = {NAME = '', DESC = ''}
 CMDs[#CMDs + 1] = {NAME = '//===其他模块===\\\\', DESC = 'Other Modules // Translated Version'}
@@ -4466,7 +4471,6 @@ CMDs[#CMDs + 1] = {NAME = 'tweengotomodel / tgotomodel [part name]', DESC = 'Twe
 CMDs[#CMDs + 1] = {NAME = 'gotopartdelay / gotomodeldelay [num]', DESC = 'Adjusts how quickly you teleport to each part (default is 0.1)'}
 CMDs[#CMDs + 1] = {NAME = 'bringpart [part name] (CLIENT)', DESC = 'Moves a part or multiple parts to your character'}
 CMDs[#CMDs + 1] = {NAME = 'bringpartclass / bpc [class name] (CLIENT)', DESC = 'Moves a part or multiple parts to your character based on classname'}
-CMDs[#CMDs + 1] = {NAME = 'noclickdetectorlimits / nocdlimits', DESC = 'Sets all click detectors MaxActivationDistance to math.huge'}
 CMDs[#CMDs + 1] = {NAME = 'fireclickdetectors / firecd', DESC = 'Uses all click detectors in a game'}
 CMDs[#CMDs + 1] = {NAME = 'firetouchinterests / touchinterests', DESC = 'Uses all touchinterests in a game'}
 CMDs[#CMDs + 1] = {NAME = 'simulationradius / simradius', DESC = 'Sets your SimulationRadius to math.huge'}
@@ -6482,6 +6486,38 @@ addcmd('cframeflyspeed',{'cflyspeed'},function(args, speaker)
 	if isNumber(args[1]) then
 		SPI = args[1]
 	end
+end)
+
+addcmd('nocooldown',{'nocd'},function()
+for i,v in next, getgc() do 
+    if type(v) == "function" and getfenv(v).script and getfenv(v).script == game:GetService("Players").LocalPlayer.Character.ClientInputHandler then 
+        for i2,v2 in next, debug.getupvalues(v) do 
+            if type(v2) == "number" then 
+                debug.setupvalue(v, i2, math.huge)
+            end
+        end
+    end
+end
+end)
+
+addcmd('cooldown',{'cd'},function()
+for i,v in next, getgc() do 
+    if type(v) == "function" and getfenv(v).script and getfenv(v).script == game:GetService("Players").LocalPlayer.Character.ClientInputHandler then 
+        for i2,v2 in next, debug.getupvalues(v) do 
+            if type(v2) == "number" then 
+                debug.setupvalue(v, i2, 12)
+            end
+        end
+    end
+end
+end)
+local Doors = workspace.Doors
+addcmd('nodoors',{'nd'},function()
+Doors.Parent=game.Stats
+end)
+
+addcmd('doors',{},function()
+Doors.Parent=workspace
 end)
 
 Floating = false
@@ -9420,14 +9456,6 @@ addcmd('gotopartdelay',{},function(args, speaker)
 	end
 end)
 
-addcmd('noclickdetectorlimits',{'nocdlimits','removecdlimits'},function(args, speaker)
-	for i,v in pairs(workspace:GetDescendants()) do
-		if v:IsA("ClickDetector") then
-			v.MaxActivationDistance = math.huge
-		end
-	end
-end)
-
 addcmd('fireclickdetectors',{'firecd','firecds'},function(args, speaker)
 	if fireclickdetector then
 		for i,v in pairs(workspace:GetDescendants()) do
@@ -10200,7 +10228,7 @@ function GetClosest()
             if v.Character and v.Character:FindFirstChild("Humanoid") and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid").Health ~= 0 and (not teamcheck or v.Team ~= LocalPlayer.Team)  then
                 local screenpoint = workspace.CurrentCamera:WorldToScreenPoint(v.Character.HumanoidRootPart.Position)
                 local check = (Vector2.new(Mouse.X,Mouse.Y)-Vector2.new(screenpoint.X,screenpoint.Y)).magnitude
-                if check < dist then
+                if check < dist and not whitelisted[v.Name] then
                     target  = v
                     dist = check
                 end
@@ -10243,7 +10271,7 @@ end)
 local LocalPlayer=game.Players.LocalPlayer
 function murk()
 for i,v in pairs(game.Players:GetPlayers()) do
-if v~=LocalPlayer and LocalPlayer and oneshotpunch then
+if v~=LocalPlayer and LocalPlayer and oneshotpunch and not whitelisted[v.Name] then
 for i=1,10 do
 local args = {
     [1] = v
@@ -10253,6 +10281,49 @@ end
 end
 end
 end
+function murkall()
+for i,v in pairs(game.Players:GetPlayers()) do
+if v~=LocalPlayer and LocalPlayer and not whitelisted[v.Name] then
+for i=1,10 do
+local args = {
+    [1] = v
+}
+game:GetService("ReplicatedStorage").meleeEvent:FireServer(unpack(args))
+end
+end
+end
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+pcall(function()
+if killaura then
+murkall()
+end
+end)
+end)
+addcmd('killaura', {}, function(args, speaker)
+	killaura=true
+end)
+
+addcmd('unkillaura', {}, function(args, speaker)
+	killaura=true
+end)
+
+addcmd('whitelist', {'wl'}, function(args, speaker)
+local target = getPlayer(args[1], speaker)
+for i,v in pairs(target) do
+table.insert(whitelisted, v)
+end
+end)
+
+addcmd('unwhitelist', {'unwl', 'blacklist'}, function(args, speaker)
+local target = getPlayer(args[1], speaker)
+for i,v in pairs(target) do
+pcall(function()
+table.remove(whitelisted, v)
+end)
+end
+end)
 
 local UIS = game:GetService("UserInputService")
 UIS.InputBegan:Connect(function(a)
@@ -10272,7 +10343,7 @@ addcmd('kill', {'fekill'}, function(args, speaker)
 local target = getPlayer(args[1], speaker)
 local old = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame 
 for i,v in pairs(target) do
-if v~=game.Players.LocalPlayer.Name then
+if v~=game.Players.LocalPlayer.Name and not whitelisted[v] then
 repeat
 game.Players.LocalPlayer.Character:SetPrimaryPartCFrame(game.Players[v].Character.HumanoidRootPart.CFrame)
 for i=1,15 do
@@ -10910,10 +10981,6 @@ addcmd('instarespawn',{'ir','instantr','nocdr'},function(args, speaker)
 	InstaRespawn=args[1]
 end)
 
-addcmd('gunsrespawn',{'gir','givegr','nocdrg'},function(args, speaker)
-	GiveGunsOnKilled=args[1] or (true or false)
-end)
-
 updateColors(currentShade1,shade1)
 updateColors(currentShade2,shade2)
 updateColors(currentShade3,shade3)
@@ -11139,7 +11206,7 @@ for i=0,1,0.1 do
 	wait()
 end
 Credits:TweenPosition(UDim2.new(0,0,0.9,30), "Out", "Quart", 0.2)
-wait(0.8)
+wait()
 Logo:Destroy()
 Credits:Destroy()
 IntroBackground:Destroy()
