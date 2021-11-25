@@ -8763,79 +8763,6 @@ addcmd('deleteselectedtool',{'dst'},function(args, speaker)
 	end
 end)
 
-addcmd('console',{},function(args, speaker)
-	-- Thanks wally!!
-	notify("加载中",'请稍等')
-	local _, str = pcall(function()
-		return game:HttpGet("https://gist.githubusercontent.com/luatsuki/a1b48e02d5710ebff8fe1ffb1fc5ea38/raw/055143d9238eb6645fbb1f5c4a9a0122ca90c8f4/Console", true)
-	end)
-
-	local s, e = loadstring(str)
-	if typeof(s) ~= "function" then
-		return
-	end
-
-	local success, message = pcall(s)
-	if (not success) then
-		if printconsole then
-			printconsole(message)
-		elseif printoutput then
-			printoutput(message)
-		end
-	end
-	wait(1)
-	notify('Console','Press F9 to open the console')
-end)
-
-addcmd('explorer',{'dex'},function(args, speaker)
-	notify("加载中",'请稍等')
-	local Dex = game:GetObjects("rbxassetid://3567096419")[1]
-	Dex.Parent = PARENT
-
-	local function Load(Obj, Url)
-		local function GiveOwnGlobals(Func, Script)
-			local Fenv = {}
-			local RealFenv = {script = Script}
-			local FenvMt = {}
-			FenvMt.__index = function(a,b)
-				if RealFenv[b] == nil then
-					return getfenv()[b]
-				else
-					return RealFenv[b]
-				end
-			end
-			FenvMt.__newindex = function(a, b, c)
-				if RealFenv[b] == nil then
-					getfenv()[b] = c
-				else
-					RealFenv[b] = c
-				end
-			end
-			setmetatable(Fenv, FenvMt)
-			setfenv(Func, Fenv)
-			return Func
-		end
-		local function LoadScripts(Script)
-			if Script.ClassName == "Script" or Script.ClassName == "LocalScript" then
-				task.spawn(function()
-					GiveOwnGlobals(loadstring(Script.Source, "=" .. Script:GetFullName()), Script)()
-				end)
-			end
-			for i,v in pairs(Script:GetChildren()) do
-				LoadScripts(v)
-			end
-		end
-		LoadScripts(Obj)
-	end
-
-	Load(Dex)
-end)
-
-
-addcmd('audiologger',{'alogger'},function(args, speaker)
-	notify("加载中",'请稍等')
-	loadstring(game:HttpGet(('https://pastebin.com/raw/GmbrsEjM'),true))()
-end)
 function Colorpick(a)
 local ScreenGui = Instance.new("ScreenGui")
 local ColorPicker = Instance.new("Frame")
@@ -11116,8 +11043,7 @@ end
 IYMouse.Move:Connect(checkTT)
 
 task.spawn(function()
-	if pcall(function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/version'))() end) then
-        Announcement='几秒前更新 "PRISON LIFE"'
+	if pcall(function() loadstring(game:HttpGet('https://raw.githubusercontent.com/PotatoLime/Endless-Aid-Prison-Life-Module/main/temp/announcement'))() end) then
 		if Announcement and Announcement ~= '' then
 			local AnnGUI = Instance.new("Frame")
 			local background = Instance.new("Frame")
