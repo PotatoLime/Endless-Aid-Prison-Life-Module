@@ -10228,7 +10228,7 @@ function GetClosest()
             if v.Character and v.Character:FindFirstChild("Humanoid") and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid").Health ~= 0 and (not teamcheck or v.Team ~= LocalPlayer.Team)  then
                 local screenpoint = workspace.CurrentCamera:WorldToScreenPoint(v.Character.HumanoidRootPart.Position)
                 local check = (Vector2.new(Mouse.X,Mouse.Y)-Vector2.new(screenpoint.X,screenpoint.Y)).magnitude
-                if check < dist and not whitelisted[v.Name] then
+                if check < dist and whitelisted[v.Name]==nil or whitelisted[v.Name]==false  then
                     target  = v
                     dist = check
                 end
@@ -10271,7 +10271,7 @@ end)
 local LocalPlayer=game.Players.LocalPlayer
 function murk()
 for i,v in pairs(game.Players:GetPlayers()) do
-if v~=LocalPlayer and LocalPlayer and oneshotpunch and not whitelisted[v.Name] then
+if v~=LocalPlayer and LocalPlayer and oneshotpunch and whitelisted[v.Name]==nil or whitelisted[v.Name]==false then
 for i=1,10 do
 local args = {
     [1] = v
@@ -10283,7 +10283,7 @@ end
 end
 function murkall()
 for i,v in pairs(game.Players:GetPlayers()) do
-if v~=LocalPlayer and LocalPlayer and not whitelisted[v.Name] then
+if v~=game.Players.LocalPlayer and whitelisted[v.Name]==nil or whitelisted[v.Name]==false then
 for i=1,10 do
 local args = {
     [1] = v
@@ -10311,17 +10311,13 @@ end)
 
 addcmd('whitelist', {'wl'}, function(args, speaker)
 local target = getPlayer(args[1], speaker)
-for i,v in pairs(target) do
-table.insert(whitelisted, v)
-end
+whitelisted[v]=true
 end)
 
 addcmd('unwhitelist', {'unwl', 'blacklist'}, function(args, speaker)
 local target = getPlayer(args[1], speaker)
 for i,v in pairs(target) do
-pcall(function()
-table.remove(whitelisted, v)
-end)
+whitelisted[v]=false
 end
 end)
 
@@ -10341,20 +10337,54 @@ end)
 
 addcmd('kill', {'fekill'}, function(args, speaker)
 local target = getPlayer(args[1], speaker)
+local function searchShotgun()
+    local lp = game:GetService("Players").LocalPlayer
+    
+    local shotgun = lp.Backpack:FindFirstChild("Remington 870") or lp.Character:FindFirstChild("Remington 870")
+    
+    return shotgun
+end
+
+local function getShotgun()
+	local args = {
+		[1] = workspace.Prison_ITEMS.giver["Remington 870"].ITEMPICKUP;
+	}
+	
+	local msg = workspace.Remote.ItemHandler:InvokeServer(unpack(args))
+    return searchShotgun(), msg
+end
+local shotgun = getShotgun()
+local args = {
+    [1] = {},
+    [2] = shotgun
+}
+for i,v in pairs(target) do
+if v~=game.Players.LocalPlayer.Name and whitelisted[v]==nil or whitelisted[v]==false then
+for i=1,5 do
+local argument={
+["RayObject"] = Ray.new(Vector3.new(770.5693359375, 101.48998260498, 2346.4899902344), Vector3.new(374.55645751953, -12.448809623718, 139.83030700684)),
+["Distance"] = 125.63582611084,
+["Cframe"] = CFrame.new(834.889526, 101.381859, 2364.62915, 0.268538237, -0.00358812814, 0.963262379, -5.8207654e-11, 0.999993086, 0.0037249492, -0.963268995, -0.00100029132, 0.268536389),
+["Hit"] = game.Players[v].Character.Head
+}
+table.insert(args[1], argument)
+end
+end
+end
+game:GetService("ReplicatedStorage").ShootEvent:FireServer(unpack(args))
+end)
+
+addcmd('arrest', {}, function(args, speaker)
+local target = getPlayer(args[1], speaker)
 local old = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame 
 for i,v in pairs(target) do
-if v~=game.Players.LocalPlayer.Name and not whitelisted[v] then
-repeat
+if v~=game.Players.LocalPlayer.Name and whitelisted[v]==nil then
+for i=1,10 do
 game.Players.LocalPlayer.Character:SetPrimaryPartCFrame(game.Players[v].Character.HumanoidRootPart.CFrame)
-for i=1,15 do
-local args = {
-    	[1] = game.Players[v]
-	}
-game:GetService("ReplicatedStorage").meleeEvent:FireServer(unpack(args))
-end
 wait()
-game.Players.LocalPlayer.Character.Humanoid:ChangeState(3)
-until game.Players[v].Character.Humanoid.Health<1
+game.Workspace.Remote.arrest:InvokeServer(game.Players[v].Character.HumanoidRootPart)
+wait()
+end
 end
 end
 game.Players.LocalPlayer.Character:SetPrimaryPartCFrame(old)
